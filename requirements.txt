@@ -1,0 +1,5 @@
+streamlit
+telethon==1.40.0
+colorama
+python-socks
+pandas
