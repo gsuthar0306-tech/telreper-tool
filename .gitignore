@@ -1,0 +1,7 @@
+﻿# Ignore generated session and log artifacts
+sessions/
+logs/
+*.session
+__pycache__/
+*.pyc
+*.pyo

@@ -24,8 +24,9 @@ except ImportError:
 
 colorama.init(autoreset=True)
 
-SESSIONS_DIR = Path("sessions")
-LOGS_DIR = Path("logs")
+DATA_DIR = Path.home() / ".telreper"
+SESSIONS_DIR = DATA_DIR / "sessions"
+LOGS_DIR = DATA_DIR / "logs"
 
 REASON_MAP = {
     "spam": InputReportReasonSpam(),
@@ -47,8 +48,9 @@ class TelReper:
         self._setup_logging()
 
     def _setup_dirs(self):
-        SESSIONS_DIR.mkdir(exist_ok=True)
-        LOGS_DIR.mkdir(exist_ok=True)
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+        LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
     def _setup_logging(self):
         log_file = LOGS_DIR / f"telreper_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"

@@ -75,9 +75,10 @@ telreper/
 ├── reper.py
 ├── requirements.txt
 ├── README.md
-├── sessions/          # Your .session files
-└── logs/              # Auto created
+└── templates/
 ```
+
+**Note:** Session files are now stored outside the repository at `~/.telreper/sessions` and logs at `~/.telreper/logs`. This keeps your repo safe for client delivery.
 
 ## Warning
 - This tool is for reporting real violations (harassment, child abuse, spam, etc.)
