@@ -1,3 +1,4 @@
+import os
 import asyncio
 import random
 import logging
@@ -223,10 +224,24 @@ def main():
     parser.add_argument("--min-delay", type=float, default=3.0)
     parser.add_argument("--max-delay", type=float, default=9.0)
     parser.add_argument("--shuffle-accounts", action="store_true", default=True)
-    parser.add_argument("--api-id", type=int, default=0)
-    parser.add_argument("--api-hash", default="YOUR_API_HASH")
+    parser.add_argument("--api-id", type=int, default=None)
+    parser.add_argument("--api-hash", default=None)
 
     args = parser.parse_args()
+    if args.api_id is None:
+        env_api_id = os.getenv("TELEGRAM_API_ID")
+        if env_api_id:
+            try:
+                args.api_id = int(env_api_id)
+            except ValueError:
+                args.api_id = None
+    if args.api_hash is None:
+        args.api_hash = os.getenv("TELEGRAM_API_HASH")
+
+    if not args.api_id or not args.api_hash:
+        print("❌ Please set TELEGRAM_API_ID and TELEGRAM_API_HASH environment variables or pass --api-id and --api-hash.")
+        sys.exit(1)
+
     app = TelReper(args)
     asyncio.run(app.run())
 

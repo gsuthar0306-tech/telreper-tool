@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import asyncio
 import time
@@ -42,6 +43,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+DEFAULT_API_ID = None
+DEFAULT_API_HASH = None
+_env_api_id = os.getenv("TELEGRAM_API_ID")
+if _env_api_id:
+    try:
+        DEFAULT_API_ID = int(_env_api_id)
+    except ValueError:
+        DEFAULT_API_ID = None
+DEFAULT_API_HASH = os.getenv("TELEGRAM_API_HASH")
+
 # Session State
 if 'logs' not in st.session_state:
     st.session_state.logs = []
@@ -60,9 +71,13 @@ if 'otp_code' not in st.session_state:
 if 'auth_password' not in st.session_state:
     st.session_state.auth_password = ""
 if 'api_id' not in st.session_state:
-    st.session_state.api_id = 0
+    st.session_state.api_id = DEFAULT_API_ID or 0
 if 'api_hash' not in st.session_state:
-    st.session_state.api_hash = "YOUR_API_HASH"
+    st.session_state.api_hash = DEFAULT_API_HASH or ""
+
+
+def api_credentials_valid():
+    return bool(st.session_state.api_id and st.session_state.api_hash)
 
 
 def run_async(coro):
@@ -102,6 +117,8 @@ with tabs[1]:
         if st.button("🚀 START MASS REPORTING", type="primary", use_container_width=True):
             if not target:
                 st.error("Please enter target username")
+            elif not api_credentials_valid():
+                st.error("Enter your Telegram API ID and API Hash on the Settings tab before reporting.")
             else:
                 with st.spinner("Starting reporting..."):
                     try:
@@ -180,7 +197,9 @@ with tabs[0]:
     send_col, verify_col = st.columns([1, 1])
     with send_col:
         if st.button("➕ Send OTP", type="primary", key="send_otp"):
-            if not phone_local or not country_code:
+            if not api_credentials_valid():
+                st.warning("Enter your Telegram API ID and API Hash on the Settings tab first.")
+            elif not phone_local or not country_code:
                 st.warning("Enter both country code and phone number.")
             else:
                 with st.spinner("Requesting OTP..."):
@@ -203,7 +222,9 @@ with tabs[0]:
                         st.error(f"Failed to request OTP: {e}")
     with verify_col:
         if st.button("✅ Verify OTP", type="primary", key="verify_otp"):
-            if not st.session_state.otp_requested:
+            if not api_credentials_valid():
+                st.warning("Enter your Telegram API ID and API Hash on the Settings tab first.")
+            elif not st.session_state.otp_requested:
                 st.warning("Request an OTP first before verifying.")
             elif not otp_code:
                 st.warning("Enter the SMS code sent by Telegram.")

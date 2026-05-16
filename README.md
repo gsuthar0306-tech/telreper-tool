@@ -32,18 +32,51 @@ Advanced Telegram channel reporting tool made for mass reporting abusive/hate ch
 pip install -r requirements.txt
 ```
 
+## Environment setup
+
+This app requires your own Telegram API credentials.
+Create them at https://my.telegram.org and set them as environment variables:
+
+```bash
+export TELEGRAM_API_ID=your_api_id
+export TELEGRAM_API_HASH=your_api_hash
+```
+
+On Windows PowerShell:
+```powershell
+$env:TELEGRAM_API_ID="your_api_id"
+$env:TELEGRAM_API_HASH="your_api_hash"
+```
+
+You can also enter these values in the Settings tab on the app.
+
 ## Usage
 
 ### 1. Add Accounts
 ```bash
-python reper.py -an +919876543210
+python reper.py -an +919876543210 --api-id 123456 --api-hash your_hash
 ```
 
 ### 2. Start Mass Reporting
 ```bash
 python reper.py -r 10 -t targetusername -m child_abuse
 ```
+### 3. Run the Web App
+```bash
+streamlit run telreper_web.py
+```
 
+Then open `http://localhost:8501` in your browser.
+
+### 4. Share with Cloudflare Tunnel (optional)
+Install cloudflared, login, and forward the local port:
+
+```bash
+cloudflared login
+cloudflared tunnel --url http://localhost:8501
+```
+
+This will give you a secure temporary URL to share with your client.
 ### Other Commands
 
 **Show help:**
