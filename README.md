@@ -1,128 +1,144 @@
-# TelReper - Telegram Mass Reporter
+# TelReper - Telegram Report Helper
 
-Advanced Telegram channel reporting tool made for mass reporting abusive/hate channels.
+TelReper is a small Streamlit app for submitting legitimate Telegram reports from accounts that the user owns and logs in with OTP. It is built for client use on Windows with a simple browser interface.
 
----
+## What It Does
 
-## Features
+- Adds Telegram accounts through OTP login.
+- Supports Telegram report reasons such as spam, fake account, violence, child abuse, pornography, copyright, illegal drugs, personal details, geo-irrelevant, and other.
+- Keeps session files and logs outside the project folder at `~/.telreper`.
+- Shows live run statistics and saved logs.
+- Exports a clean run summary for client records.
+- Lets the user check session health and delete expired sessions.
+- Provides a local web interface through Streamlit.
 
-- Add unlimited Telegram accounts
-- Mass reporting with different reasons
-- Automatic channel joining
-- Flood wait handling
-- Colored console output
-- Logging support
-- Simple and easy to use CLI
+## Important Limits
 
-## Reasons Available
+This tool is for real policy violations only. It does not guarantee Telegram moderation action. A successful report count means Telegram accepted the API request from the account.
 
-- `spam`
-- `fake_account`
-- `violence`
-- `child_abuse` ← **Recommended for hate channels**
-- `pornography`
-- `geoirrelevant`
+The app intentionally caps reports per account in `reper.py` with:
 
----
+```python
+MAX_REPORTS_PER_ACCOUNT = 3
+```
 
-## Installation
+Raising this too high can cause account bans and can become abusive.
 
-1. Install requirements:
+## Requirements
+
+- Windows, Linux, or macOS
+- Python 3.10+
+- Telegram API ID and API hash from `https://my.telegram.org`
+- At least one Telegram account that can receive OTP
+
+## Install
+
 ```bash
 pip install -r requirements.txt
 ```
 
-## Environment setup
+## Run On Windows
 
-This app requires your own Telegram API credentials.
-Create them at https://my.telegram.org and set them as environment variables:
+Double-click:
 
-```bash
-export TELEGRAM_API_ID=your_api_id
-export TELEGRAM_API_HASH=your_api_hash
+```text
+launch_telreper.bat
 ```
 
-On Windows PowerShell:
-```powershell
-$env:TELEGRAM_API_ID="your_api_id"
-$env:TELEGRAM_API_HASH="your_api_hash"
-```
+Or run manually:
 
-You can also enter these values in the Settings tab on the app.
-
-## Usage
-
-### 1. Add Accounts
-```bash
-python reper.py -an +919876543210 --api-id 123456 --api-hash your_hash
-```
-
-### 2. Start Mass Reporting
-```bash
-python reper.py -r 10 -t targetusername -m child_abuse
-```
-### 3. Run the Web App
 ```bash
 streamlit run telreper_web.py
 ```
 
-Then open `http://localhost:8501` in your browser.
+Then open:
 
-### 4. Share with Cloudflare Tunnel (optional)
-Install cloudflared, login, and forward the local port:
-
-```bash
-cloudflared login
-cloudflared tunnel --url http://localhost:8501
+```text
+http://localhost:8501
 ```
 
-This will give you a secure temporary URL to share with your client.
-### Other Commands
+## First Setup
 
-**Show help:**
-```bash
-python reper.py --help
+1. Open the app.
+2. Go to the `Setup` tab.
+3. Enter the client's own Telegram API ID and API hash.
+4. Press `Test API Credentials`.
+5. Go to `Accounts`.
+6. Enter phone number, send OTP, verify OTP.
+7. If Telegram asks for 2FA, tick the 2FA box and enter the account password.
+
+Do not give your personal API hash to a client. The client should create their own API credentials.
+
+## Save API Credentials On Windows
+
+The Setup tab shows PowerShell commands like this:
+
+```powershell
+[Environment]::SetEnvironmentVariable("TELEGRAM_API_ID", "123456", "User")
+[Environment]::SetEnvironmentVariable("TELEGRAM_API_HASH", "your_hash", "User")
 ```
 
-**Show all reasons:**
+After running those commands, restart the terminal or app.
+
+## Reporting
+
+1. Go to `Reports`.
+2. Enter a Telegram username or `t.me` link.
+3. Select the correct reason.
+4. Add a short factual comment.
+5. Press `Submit Report`.
+6. Go to `Logs` to view results or download a summary.
+
+## Where Data Is Stored
+
+Session files:
+
+```text
+~/.telreper/sessions
+```
+
+Run logs:
+
+```text
+~/.telreper/logs
+```
+
+Do not share session files, API hashes, OTP codes, or 2FA passwords.
+
+## CLI Usage
+
+Show reasons:
+
 ```bash
 python reper.py --reasons
 ```
 
-## Recommended Settings (For Best Results)
+Submit a report:
+
 ```bash
-# For hate/abusive channels
-python reper.py -r 8 -t targetusername -m child_abuse --max-concurrent 3
+python reper.py -t targetusername -m other -r 1 --comment "This channel appears to violate Telegram rules."
 ```
 
-**Tips:**
-- Use 5–15 reports per account
-- Use `child_abuse` or `pornography` for faster action
-- Don't use very high report count on single account
-- Add many aged accounts for better effect
-- Use proxies (advanced users)
+Add account from CLI:
 
-## Project Structure
-```text
-telreper/
-├── reper.py
-├── requirements.txt
-├── README.md
-└── templates/
+```bash
+python reper.py -an +919876543210 --api-id 123456 --api-hash your_hash
 ```
 
-**Important Client Delivery Note:**
-- Do not include any Telegram session files or logs in the repository.
-- Session files are now stored outside the repo at `~/.telreper/sessions`.
-- Logs are now stored at `~/.telreper/logs`.
-- `.gitignore` already prevents `sessions/`, `logs/`, `*.session`, and `__pycache__/` from being committed.
+## Client Delivery Checklist
 
-If a session was previously exposed, revoke active Telegram sessions from Telegram Settings → Devices or re-login with a fresh account. This ensures old sessions cannot be reused.
+- Run `pip install -r requirements.txt`.
+- Start the app once with `launch_telreper.bat`.
+- Test API credentials.
+- Add one account with OTP.
+- Run `Check Session Health`.
+- Submit one test report to a valid target only if there is a real violation.
+- Download the run summary from the `Logs` tab.
 
-## Warning
-- This tool is for reporting real violations (harassment, child abuse, spam, etc.)
-- Misuse can lead to your accounts getting banned
-- Telegram may temporarily or permanently ban accounts that report too aggressively
-- Use at your own risk
+## Safety Notes
 
-Made with ❤️ for justice against hate accounts.
+- Use accurate reasons only.
+- Keep comments factual.
+- Do not include OTPs, passwords, API hashes, or unrelated private data in comments.
+- Revoke exposed sessions from Telegram Settings > Devices.
+- Misuse may lead to account bans.
