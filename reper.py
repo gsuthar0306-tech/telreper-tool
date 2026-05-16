@@ -81,6 +81,34 @@ class TelReper:
         finally:
             await client.disconnect()
 
+    async def request_code(self, phone: str) -> str:
+        session_name = phone.strip("+").replace(" ", "")
+        client = TelegramClient(str(SESSIONS_DIR / session_name), self.args.api_id, self.args.api_hash)
+        await client.connect()
+        try:
+            sent = await client.send_code_request(phone)
+            return sent.phone_code_hash
+        finally:
+            await client.disconnect()
+
+    async def sign_in_with_code(self, phone: str, code: str, phone_code_hash: str, password: str = None) -> bool:
+        session_name = phone.strip("+").replace(" ", "")
+        client = TelegramClient(str(SESSIONS_DIR / session_name), self.args.api_id, self.args.api_hash)
+        await client.connect()
+        try:
+            if await client.is_user_authorized():
+                return True
+            try:
+                await client.sign_in(phone=phone, code=code, phone_code_hash=phone_code_hash)
+            except errors.SessionPasswordNeededError:
+                if password:
+                    await client.sign_in(password=password)
+                else:
+                    raise
+            return await client.is_user_authorized()
+        finally:
+            await client.disconnect()
+
     async def _report_task(self, session_path: Path, target: str):
         proxy = None  # You can expand later
         client = TelegramClient(
