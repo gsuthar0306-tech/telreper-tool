@@ -78,7 +78,13 @@ telreper/
 └── templates/
 ```
 
-**Note:** Session files are now stored outside the repository at `~/.telreper/sessions` and logs at `~/.telreper/logs`. This keeps your repo safe for client delivery.
+**Important Client Delivery Note:**
+- Do not include any Telegram session files or logs in the repository.
+- Session files are now stored outside the repo at `~/.telreper/sessions`.
+- Logs are now stored at `~/.telreper/logs`.
+- `.gitignore` already prevents `sessions/`, `logs/`, `*.session`, and `__pycache__/` from being committed.
+
+If a session was previously exposed, revoke active Telegram sessions from Telegram Settings → Devices or re-login with a fresh account. This ensures old sessions cannot be reused.
 
 ## Warning
 - This tool is for reporting real violations (harassment, child abuse, spam, etc.)
