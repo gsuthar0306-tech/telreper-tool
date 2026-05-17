@@ -28,7 +28,7 @@ Raising this too high can cause account bans and can become abusive.
 
 - Windows, Linux, or macOS
 - Python 3.10+
-- Telegram API ID and API hash from `https://my.telegram.org`
+- Telegram API ID and API hash from `https://my.telegram.org/apps`
 - At least one Telegram account that can receive OTP
 
 ## Install
@@ -61,7 +61,7 @@ http://localhost:8501
 
 1. Open the app.
 2. Go to the `Setup` tab.
-3. Enter the client's own Telegram API ID and API hash.
+3. Enter the client's own Telegram API ID and API hash from `https://my.telegram.org/apps`.
 4. Press `Test API Credentials`.
 5. Go to `Accounts`.
 6. Enter phone number, send OTP, verify OTP.

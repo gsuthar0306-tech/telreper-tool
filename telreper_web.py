@@ -178,7 +178,7 @@ tabs = st.tabs(["Setup", "Accounts", "Reports", "Logs"])
 with tabs[0]:
     st.subheader("API Setup")
     st.markdown(
-        "Use the client's own Telegram API ID and API hash from `https://my.telegram.org`. "
+        "Use the client's own Telegram API ID and API hash from `https://my.telegram.org/apps`. "
         "Do not share your personal API hash with a client."
     )
 
