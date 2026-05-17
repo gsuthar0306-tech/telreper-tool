@@ -20,6 +20,7 @@ try:
         LOGS_DIR,
         MAX_REPORTS_PER_ACCOUNT,
         normalize_target,
+        parse_proxy_url,
     )
 except ImportError:
     st.error("Could not import reper.py. Keep telreper_web.py and reper.py in the same folder.")
@@ -32,6 +33,7 @@ ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 SETTINGS_FILE = DATA_DIR / "settings.json"
 DEFAULT_API_ID = None
 DEFAULT_API_HASH = os.getenv("TELEGRAM_API_HASH") or ""
+DEFAULT_PROXY_URL = ""
 env_api_id = os.getenv("TELEGRAM_API_ID")
 if env_api_id:
     try:
@@ -57,6 +59,7 @@ if not DEFAULT_API_ID:
         DEFAULT_API_ID = None
 if not DEFAULT_API_HASH:
     DEFAULT_API_HASH = SAVED_SETTINGS.get("api_hash") or ""
+DEFAULT_PROXY_URL = SAVED_SETTINGS.get("proxy_url") or ""
 
 
 st.markdown(
@@ -96,6 +99,7 @@ DEFAULT_STATE = {
     "otp_code": "",
     "api_id": DEFAULT_API_ID or 0,
     "api_hash": DEFAULT_API_HASH,
+    "proxy_url": DEFAULT_PROXY_URL,
 }
 
 for key, value in DEFAULT_STATE.items():
@@ -135,9 +139,9 @@ def delete_session_files(session_path):
         path.unlink(missing_ok=True)
 
 
-def save_api_settings(api_id, api_hash):
+def save_api_settings(api_id, api_hash, proxy_url):
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    payload = {"api_id": int(api_id), "api_hash": api_hash}
+    payload = {"api_id": int(api_id), "api_hash": api_hash, "proxy_url": proxy_url.strip()}
     SETTINGS_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
@@ -186,8 +190,8 @@ def build_summary(target, reason, comment, evidence_type, evidence_reference, ev
     return "\n".join(lines)
 
 
-async def test_api_credentials(api_id, api_hash):
-    client = TelegramClient(StringSession(), api_id, api_hash)
+async def test_api_credentials(api_id, api_hash, proxy_url=""):
+    client = TelegramClient(StringSession(), api_id, api_hash, proxy=parse_proxy_url(proxy_url))
     await client.connect()
     try:
         return client.is_connected()
@@ -195,8 +199,8 @@ async def test_api_credentials(api_id, api_hash):
         await client.disconnect()
 
 
-async def check_session(session_path, api_id, api_hash):
-    client = TelegramClient(str(session_path.with_suffix("")), api_id, api_hash)
+async def check_session(session_path, api_id, api_hash, proxy_url=""):
+    client = TelegramClient(str(session_path.with_suffix("")), api_id, api_hash, proxy=parse_proxy_url(proxy_url))
     await client.connect()
     try:
         if not await client.is_user_authorized():
@@ -234,6 +238,12 @@ with tabs[0]:
 
     st.number_input("Telegram API ID", key="api_id", min_value=0, step=1)
     st.text_input("Telegram API Hash", type="password", key="api_hash")
+    st.text_input(
+        "Trusted Proxy URL",
+        key="proxy_url",
+        placeholder="socks5://user:pass@in.example.com:1080",
+        help="Optional. Use one trusted proxy only. Rotation is not supported.",
+    )
 
     setup_cols = st.columns([1, 1])
     with setup_cols[0]:
@@ -242,7 +252,13 @@ with tabs[0]:
                 st.warning("Enter API ID and API hash first.")
             else:
                 try:
-                    ok = run_async(test_api_credentials(st.session_state.api_id, st.session_state.api_hash))
+                    ok = run_async(
+                        test_api_credentials(
+                            st.session_state.api_id,
+                            st.session_state.api_hash,
+                            st.session_state.proxy_url,
+                        )
+                    )
                     if ok:
                         st.success("API credentials connected successfully.")
                     else:
@@ -253,7 +269,10 @@ with tabs[0]:
     with setup_cols[1]:
         st.info(f"Sessions: {SESSIONS_DIR}")
         st.info(f"Logs: {LOGS_DIR}")
-        st.info("Proxy: not used by the web app. Direct Telegram connection is used.")
+        if st.session_state.proxy_url.strip():
+            st.info("Proxy: enabled. Rotation: off.")
+        else:
+            st.info("Proxy: direct Telegram connection. Rotation: off.")
 
     save_cols = st.columns([1, 1])
     with save_cols[0]:
@@ -261,7 +280,7 @@ with tabs[0]:
             if not api_credentials_valid():
                 st.warning("Enter API ID and API hash before saving.")
             else:
-                save_api_settings(st.session_state.api_id, st.session_state.api_hash)
+                save_api_settings(st.session_state.api_id, st.session_state.api_hash, st.session_state.proxy_url)
                 st.success(f"Saved locally at {SETTINGS_FILE}. Refresh will keep these values.")
     with save_cols[1]:
         if st.button("Clear Saved API Settings", use_container_width=True):
@@ -269,6 +288,7 @@ with tabs[0]:
             env_id = os.getenv("TELEGRAM_API_ID")
             st.session_state.api_id = int(env_id) if env_id and env_id.isdigit() else 0
             st.session_state.api_hash = os.getenv("TELEGRAM_API_HASH") or ""
+            st.session_state.proxy_url = ""
             st.success("Saved API settings cleared from this computer.")
 
     st.markdown("PowerShell command to save credentials for this Windows user:")
@@ -306,7 +326,13 @@ with tabs[1]:
                 st.warning("Enter a full phone number.")
             else:
                 try:
-                    reporter = TelReper(make_args(api_id=st.session_state.api_id, api_hash=st.session_state.api_hash))
+                    reporter = TelReper(
+                        make_args(
+                            api_id=st.session_state.api_id,
+                            api_hash=st.session_state.api_hash,
+                            proxy_url=st.session_state.proxy_url,
+                        )
+                    )
                     phone_code_hash = run_async(reporter.request_code(phone))
                     st.session_state.auth_phone = phone
                     st.session_state.auth_hash = phone_code_hash
@@ -326,7 +352,13 @@ with tabs[1]:
                 st.warning("Enter the OTP code.")
             else:
                 try:
-                    reporter = TelReper(make_args(api_id=st.session_state.api_id, api_hash=st.session_state.api_hash))
+                    reporter = TelReper(
+                        make_args(
+                            api_id=st.session_state.api_id,
+                            api_hash=st.session_state.api_hash,
+                            proxy_url=st.session_state.proxy_url,
+                        )
+                    )
                     success = run_async(
                         reporter.sign_in_with_code(
                             st.session_state.auth_phone,
@@ -370,7 +402,14 @@ with tabs[1]:
             detail = ""
             if run_health and api_credentials_valid():
                 with st.spinner(f"Checking {session.stem}..."):
-                    status, detail = run_async(check_session(session, st.session_state.api_id, st.session_state.api_hash))
+                    status, detail = run_async(
+                        check_session(
+                            session,
+                            st.session_state.api_id,
+                            st.session_state.api_hash,
+                            st.session_state.proxy_url,
+                        )
+                    )
 
             row = st.columns([3, 2, 1])
             row[0].markdown(f"<div class='session-card'>Account session: {session.stem}</div>", unsafe_allow_html=True)
@@ -458,6 +497,7 @@ with tabs[2]:
                 shuffle_accounts=True,
                 api_id=st.session_state.api_id,
                 api_hash=st.session_state.api_hash,
+                proxy_url=st.session_state.proxy_url,
             )
             reporter = TelReper(args)
             st.session_state.last_log_path = str(reporter.latest_log_path)

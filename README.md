@@ -8,6 +8,7 @@ TelReper is a small Streamlit app for submitting legitimate Telegram reports fro
 - Supports Telegram report reasons such as spam, fake account, violence, child abuse, pornography, copyright, illegal drugs, personal details, geo-irrelevant, and other.
 - Keeps session files and logs outside the project folder at `~/.telreper`.
 - Can save API settings locally at `~/.telreper/settings.json` so refreshes do not clear them.
+- Supports one trusted optional proxy URL for network routing. Proxy rotation is intentionally not supported.
 - Shows live run statistics and saved logs.
 - Exports a clean run summary for client records.
 - Lets the user check session health and delete expired sessions.
@@ -65,10 +66,11 @@ http://localhost:8501
 2. Go to the `Setup` tab.
 3. Enter the client's own Telegram API ID and API hash from `https://my.telegram.org/apps`.
 4. Press `Test API Credentials`.
-5. Press `Save API Settings on This Computer` if you want refreshes to keep the API values.
-6. Go to `Accounts`.
-7. Enter phone number, send OTP, verify OTP.
-8. If Telegram asks for 2FA, tick the 2FA box and enter the account password.
+5. Optionally enter one trusted proxy URL, for example `socks5://user:pass@host:1080`.
+6. Press `Save API Settings on This Computer` if you want refreshes to keep the API values.
+7. Go to `Accounts`.
+8. Enter phone number, send OTP, verify OTP.
+9. If Telegram asks for 2FA, tick the 2FA box and enter the account password.
 
 Use the API credentials created at `https://my.telegram.org/apps`.
 
@@ -119,7 +121,17 @@ Do not share session files, saved settings, API hashes, OTP codes, or 2FA passwo
 
 ## Proxy
 
-The web app currently uses a direct Telegram connection. It does not use `proxies.txt`.
+The web app supports one optional trusted proxy URL saved in `~/.telreper/settings.json`.
+
+Supported formats:
+
+```text
+socks5://user:pass@host:1080
+socks4://host:1080
+http://user:pass@host:8080
+```
+
+Use a reliable proxy from a provider you trust. Free public proxy lists are not recommended because they are unstable and may expose traffic metadata. Proxy rotation is intentionally not supported.
 
 ## CLI Usage
 

@@ -7,6 +7,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+from urllib.parse import urlparse
 
 try:
     from telethon import TelegramClient, errors
@@ -75,10 +76,35 @@ def session_name_from_phone(phone: str) -> str:
     return phone.strip("+").replace(" ", "").replace("-", "")
 
 
+def parse_proxy_url(proxy_url: str):
+    value = (proxy_url or "").strip()
+    if not value:
+        return None
+
+    parsed = urlparse(value)
+    if parsed.scheme not in {"socks5", "socks4", "http"}:
+        raise ValueError("Proxy must start with socks5://, socks4://, or http://")
+    if not parsed.hostname or not parsed.port:
+        raise ValueError("Proxy URL must include host and port.")
+
+    proxy = {
+        "proxy_type": parsed.scheme,
+        "addr": parsed.hostname,
+        "port": parsed.port,
+        "rdns": True,
+    }
+    if parsed.username:
+        proxy["username"] = parsed.username
+    if parsed.password:
+        proxy["password"] = parsed.password
+    return proxy
+
+
 class TelReper:
     def __init__(self, args):
         self.args = args
         self.proxies = self._load_proxies()
+        self.proxy = parse_proxy_url(getattr(args, "proxy_url", ""))
         self.stats = {"success": 0, "failed": 0, "flood": 0}
         self._setup_dirs()
         self._setup_logging()
@@ -115,11 +141,12 @@ class TelReper:
             str(session_path.with_suffix("")),
             self.args.api_id,
             self.args.api_hash,
+            proxy=self.proxy,
         )
 
     async def add_account(self, phone: str):
         session_name = session_name_from_phone(phone)
-        client = TelegramClient(str(SESSIONS_DIR / session_name), self.args.api_id, self.args.api_hash)
+        client = TelegramClient(str(SESSIONS_DIR / session_name), self.args.api_id, self.args.api_hash, proxy=self.proxy)
         print(f"Adding account: {phone}")
         try:
             await client.start(phone=phone)
@@ -132,7 +159,7 @@ class TelReper:
 
     async def request_code(self, phone: str) -> str:
         session_name = session_name_from_phone(phone)
-        client = TelegramClient(str(SESSIONS_DIR / session_name), self.args.api_id, self.args.api_hash)
+        client = TelegramClient(str(SESSIONS_DIR / session_name), self.args.api_id, self.args.api_hash, proxy=self.proxy)
         await client.connect()
         try:
             sent = await client.send_code_request(phone)
@@ -142,7 +169,7 @@ class TelReper:
 
     async def sign_in_with_code(self, phone: str, code: str, phone_code_hash: str, password: str = None) -> bool:
         session_name = session_name_from_phone(phone)
-        client = TelegramClient(str(SESSIONS_DIR / session_name), self.args.api_id, self.args.api_hash)
+        client = TelegramClient(str(SESSIONS_DIR / session_name), self.args.api_id, self.args.api_hash, proxy=self.proxy)
         await client.connect()
         try:
             if await client.is_user_authorized():
@@ -287,6 +314,7 @@ def main():
     parser.add_argument("-an", "--add-account")
     parser.add_argument("-s", "--session")
     parser.add_argument("--proxy-file", default="proxies.txt")
+    parser.add_argument("--proxy-url", default="")
     parser.add_argument("--max-concurrent", type=int, default=3)
     parser.add_argument("--min-delay", type=float, default=3.0)
     parser.add_argument("--max-delay", type=float, default=9.0)
