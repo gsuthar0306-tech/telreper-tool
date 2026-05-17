@@ -67,7 +67,7 @@ http://localhost:8501
 6. Enter phone number, send OTP, verify OTP.
 7. If Telegram asks for 2FA, tick the 2FA box and enter the account password.
 
-Do not give your personal API hash to a client. The client should create their own API credentials.
+Use the API credentials created at `https://my.telegram.org/apps`.
 
 ## Save API Credentials On Windows
 
