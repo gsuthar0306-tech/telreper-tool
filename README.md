@@ -7,6 +7,7 @@ TelReper is a small Streamlit app for submitting legitimate Telegram reports fro
 - Adds Telegram accounts through OTP login.
 - Supports Telegram report reasons such as spam, fake account, violence, child abuse, pornography, copyright, illegal drugs, personal details, geo-irrelevant, and other.
 - Keeps session files and logs outside the project folder at `~/.telreper`.
+- Can save API settings locally at `~/.telreper/settings.json` so refreshes do not clear them.
 - Shows live run statistics and saved logs.
 - Exports a clean run summary for client records.
 - Lets the user check session health and delete expired sessions.
@@ -64,9 +65,10 @@ http://localhost:8501
 2. Go to the `Setup` tab.
 3. Enter the client's own Telegram API ID and API hash from `https://my.telegram.org/apps`.
 4. Press `Test API Credentials`.
-5. Go to `Accounts`.
-6. Enter phone number, send OTP, verify OTP.
-7. If Telegram asks for 2FA, tick the 2FA box and enter the account password.
+5. Press `Save API Settings on This Computer` if you want refreshes to keep the API values.
+6. Go to `Accounts`.
+7. Enter phone number, send OTP, verify OTP.
+8. If Telegram asks for 2FA, tick the 2FA box and enter the account password.
 
 Use the API credentials created at `https://my.telegram.org/apps`.
 
@@ -101,13 +103,23 @@ Session files:
 ~/.telreper/sessions
 ```
 
+Saved API settings:
+
+```text
+~/.telreper/settings.json
+```
+
 Run logs:
 
 ```text
 ~/.telreper/logs
 ```
 
-Do not share session files, API hashes, OTP codes, or 2FA passwords.
+Do not share session files, saved settings, API hashes, OTP codes, or 2FA passwords.
+
+## Proxy
+
+The web app currently uses a direct Telegram connection. It does not use `proxies.txt`.
 
 ## CLI Usage
 

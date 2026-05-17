@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import re
 import time
@@ -12,6 +13,7 @@ from telethon.sessions import StringSession
 try:
     from reper import (
         TelReper,
+        DATA_DIR,
         REASON_MAP,
         REASON_LABELS,
         SESSIONS_DIR,
@@ -27,6 +29,7 @@ except ImportError:
 st.set_page_config(page_title="TelReper Control Center", page_icon="TR", layout="wide")
 
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+SETTINGS_FILE = DATA_DIR / "settings.json"
 DEFAULT_API_ID = None
 DEFAULT_API_HASH = os.getenv("TELEGRAM_API_HASH") or ""
 env_api_id = os.getenv("TELEGRAM_API_ID")
@@ -35,6 +38,25 @@ if env_api_id:
         DEFAULT_API_ID = int(env_api_id)
     except ValueError:
         DEFAULT_API_ID = None
+
+
+def load_saved_settings():
+    if not SETTINGS_FILE.exists():
+        return {}
+    try:
+        return json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+SAVED_SETTINGS = load_saved_settings()
+if not DEFAULT_API_ID:
+    try:
+        DEFAULT_API_ID = int(SAVED_SETTINGS.get("api_id") or 0) or None
+    except (TypeError, ValueError):
+        DEFAULT_API_ID = None
+if not DEFAULT_API_HASH:
+    DEFAULT_API_HASH = SAVED_SETTINGS.get("api_hash") or ""
 
 
 st.markdown(
@@ -111,6 +133,16 @@ def read_recent_log_lines(path, limit=120):
 def delete_session_files(session_path):
     for path in session_path.parent.glob(f"{session_path.stem}.session*"):
         path.unlink(missing_ok=True)
+
+
+def save_api_settings(api_id, api_hash):
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    payload = {"api_id": int(api_id), "api_hash": api_hash}
+    SETTINGS_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def clear_api_settings():
+    SETTINGS_FILE.unlink(missing_ok=True)
 
 
 def build_evidence_comment(base_comment, evidence_type, evidence_reference, evidence_notes):
@@ -221,6 +253,23 @@ with tabs[0]:
     with setup_cols[1]:
         st.info(f"Sessions: {SESSIONS_DIR}")
         st.info(f"Logs: {LOGS_DIR}")
+        st.info("Proxy: not used by the web app. Direct Telegram connection is used.")
+
+    save_cols = st.columns([1, 1])
+    with save_cols[0]:
+        if st.button("Save API Settings on This Computer", use_container_width=True):
+            if not api_credentials_valid():
+                st.warning("Enter API ID and API hash before saving.")
+            else:
+                save_api_settings(st.session_state.api_id, st.session_state.api_hash)
+                st.success(f"Saved locally at {SETTINGS_FILE}. Refresh will keep these values.")
+    with save_cols[1]:
+        if st.button("Clear Saved API Settings", use_container_width=True):
+            clear_api_settings()
+            env_id = os.getenv("TELEGRAM_API_ID")
+            st.session_state.api_id = int(env_id) if env_id and env_id.isdigit() else 0
+            st.session_state.api_hash = os.getenv("TELEGRAM_API_HASH") or ""
+            st.success("Saved API settings cleared from this computer.")
 
     st.markdown("PowerShell command to save credentials for this Windows user:")
     api_id_value = st.session_state.api_id or "YOUR_API_ID"
