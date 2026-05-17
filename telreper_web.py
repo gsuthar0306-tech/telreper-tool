@@ -113,7 +113,21 @@ def delete_session_files(session_path):
         path.unlink(missing_ok=True)
 
 
-def build_summary(target, reason, comment, sessions, stats, log_path, log_lines):
+def build_evidence_comment(base_comment, evidence_type, evidence_reference, evidence_notes):
+    parts = [base_comment.strip() or "This account/channel appears to violate Telegram rules."]
+    evidence_lines = []
+    if evidence_type and evidence_type != "None":
+        evidence_lines.append(f"Evidence type: {evidence_type}")
+    if evidence_reference.strip():
+        evidence_lines.append(f"Evidence reference: {evidence_reference.strip()}")
+    if evidence_notes.strip():
+        evidence_lines.append(f"Evidence notes: {evidence_notes.strip()}")
+    if evidence_lines:
+        parts.append("\n".join(evidence_lines))
+    return "\n\n".join(parts)
+
+
+def build_summary(target, reason, comment, evidence_type, evidence_reference, evidence_notes, sessions, stats, log_path, log_lines):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     lines = [
         "TelReper Run Summary",
@@ -128,6 +142,11 @@ def build_summary(target, reason, comment, sessions, stats, log_path, log_lines)
         "",
         "Comment:",
         comment.strip() or "No comment provided.",
+        "",
+        "Evidence context:",
+        f"Type: {evidence_type}",
+        f"Reference: {evidence_reference.strip() or 'None'}",
+        f"Notes: {evidence_notes.strip() or 'None'}",
         "",
         "Recent log:",
         *log_lines[-80:],
@@ -337,6 +356,21 @@ with tabs[2]:
         value="This account/channel appears to violate Telegram rules.",
         help="Keep it factual. Do not include OTPs, passwords, API hashes, or unrelated private data.",
     )
+    evidence_cols = st.columns([1, 2])
+    evidence_type = evidence_cols[0].selectbox(
+        "Evidence Type",
+        ["None", "Message link", "Photo/Image", "Video", "PDF/Document", "Audio", "Other media"],
+        help="Telegram's report API cannot attach files here, but this context is added to the report text and summary.",
+    )
+    evidence_reference = evidence_cols[1].text_input(
+        "Evidence Link or Reference",
+        placeholder="https://t.me/channel/123 or short file/context reference",
+    )
+    evidence_notes = st.text_area(
+        "Evidence Notes",
+        value="",
+        help="Optional factual notes about the photo, PDF, message, or media being reported.",
+    )
 
     run_cols = st.columns([1, 1, 1])
     reports_per_acc = run_cols[0].number_input(
@@ -360,11 +394,12 @@ with tabs[2]:
         elif not sessions:
             st.error("No accounts found. Add an account on the Accounts tab first.")
         else:
+            full_comment = build_evidence_comment(comment, evidence_type, evidence_reference, evidence_notes)
             args = make_args(
                 target=clean_target,
                 method=reason,
                 reports=reports_per_acc,
-                comment=comment,
+                comment=full_comment,
                 add_account=None,
                 session=None,
                 proxy_file="proxies.txt",
@@ -396,7 +431,10 @@ with tabs[2]:
             st.session_state.last_summary = build_summary(
                 clean_target,
                 reason,
-                comment,
+                full_comment,
+                evidence_type,
+                evidence_reference,
+                evidence_notes,
                 sessions,
                 reporter.stats,
                 reporter.latest_log_path,

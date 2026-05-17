@@ -10,6 +10,7 @@ TelReper is a small Streamlit app for submitting legitimate Telegram reports fro
 - Shows live run statistics and saved logs.
 - Exports a clean run summary for client records.
 - Lets the user check session health and delete expired sessions.
+- Adds evidence context such as message link, photo/image, video, PDF/document, audio, or other media notes.
 - Provides a local web interface through Streamlit.
 
 ## Important Limits
@@ -86,8 +87,11 @@ After running those commands, restart the terminal or app.
 2. Enter a Telegram username or `t.me` link.
 3. Select the correct reason.
 4. Add a short factual comment.
-5. Press `Submit Report`.
-6. Go to `Logs` to view results or download a summary.
+5. Add evidence context when available, such as a Telegram message link or media/document notes.
+6. Press `Submit Report`.
+7. Go to `Logs` to view results or download a summary.
+
+Telegram's report API used by this app does not upload photo/PDF files as attachments. Evidence fields are included in the report text and in the exported run summary.
 
 ## Where Data Is Stored
 
